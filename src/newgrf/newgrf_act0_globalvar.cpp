@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_globalvar.cpp NewGRF Action 0x00 handler for global variables. */
@@ -110,6 +110,8 @@ static ChangeInfoResult GlobalVarChangeInfo(uint first, uint last, int prop, Byt
 	/* Properties which are handled as a whole */
 	switch (prop) {
 		case 0x09: // Cargo Translation Table; loading during both reservation and activation stage (in case it is selected depending on defined cargos)
+			/* Explicitly defined cargo translation table means it's no longer a fallback list. LoadTranslationTable erases any existing list. */
+			_cur_gps.grffile->cargo_list_is_fallback = false;
 			return LoadTranslationTable<CargoLabel>(first, last, buf, [](GRFFile &grf) -> std::vector<CargoLabel> & { return grf.cargo_list; }, "Cargo");
 
 		case 0x12: // Rail type translation table; loading during both reservation and activation stage (in case it is selected depending on defined railtypes)
@@ -178,6 +180,7 @@ static ChangeInfoResult GlobalVarChangeInfo(uint first, uint last, int prop, Byt
 				if (curidx < CURRENCY_END) {
 					_currency_specs[curidx].separator.clear();
 					_currency_specs[curidx].separator.push_back(GB(options, 0, 8));
+					StrMakeValidInPlace(_currency_specs[curidx].separator);
 					/* By specifying only one bit, we prevent errors,
 					 * since newgrf specs said that only 0 and 1 can be set for symbol_pos */
 					_currency_specs[curidx].symbol_pos = GB(options, 8, 1);
@@ -335,6 +338,8 @@ static ChangeInfoResult GlobalVarReserveInfo(uint first, uint last, int prop, By
 	/* Properties which are handled as a whole */
 	switch (prop) {
 		case 0x09: // Cargo Translation Table; loading during both reservation and activation stage (in case it is selected depending on defined cargos)
+			/* Explicitly defined cargo translation table means it's no longer a fallback list. LoadTranslationTable erases any existing list. */
+			_cur_gps.grffile->cargo_list_is_fallback = false;
 			return LoadTranslationTable<CargoLabel>(first, last, buf, [](GRFFile &grf) -> std::vector<CargoLabel> & { return grf.cargo_list; }, "Cargo");
 
 		case 0x12: // Rail type translation table; loading during both reservation and activation stage (in case it is selected depending on defined railtypes)
