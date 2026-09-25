@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_cargo.cpp NewGRF Action 0x00 handler for cargo. */
@@ -15,6 +15,29 @@
 #include "newgrf_stringmapping.h"
 
 #include "../safeguards.h"
+
+/**
+ * Install cargo label in a fallback cargo list, if a NewGRF-defined cargo list is not present.
+ * This allows this NewGRF to use its self-defined cargo types without needing an explicit translation table.
+ * @param id ID of the cargo.
+ * @param last ID of the last cargo being set up.
+ * @param label Label to install.
+ */
+static void MaybeInstallFallbackCargoLabel(uint id, uint last, CargoLabel label)
+{
+	if (_cur_gps.grffile->cargo_list.empty()) {
+		/* Cargo translation table isn't configured yet, assume it won't be and configure the cargo list as a fallback list. */
+		auto default_cargo_list = GetCargoTranslationTable(*_cur_gps.grffile);
+		_cur_gps.grffile->cargo_list.assign(default_cargo_list.begin(), default_cargo_list.end());
+		_cur_gps.grffile->cargo_list_is_fallback = true;
+	}
+
+	if (_cur_gps.grffile->cargo_list_is_fallback) {
+		/* Automatically fill fallback cargo list with the defined label, resizing as needed. */
+		if (_cur_gps.grffile->cargo_list.size() < last) _cur_gps.grffile->cargo_list.resize(last, CT_INVALID);
+		_cur_gps.grffile->cargo_list[id] = label;
+	}
+}
 
 /**
  * Define properties for cargoes
@@ -115,6 +138,7 @@ static ChangeInfoResult CargoReserveInfo(uint first, uint last, int prop, ByteRe
 			case 0x17: // Cargo label
 				cs->label = CargoLabel{std::byteswap(buf.ReadDWord())};
 				BuildCargoLabelMap();
+				MaybeInstallFallbackCargoLabel(id, last, cs->label);
 				break;
 
 			case 0x18: { // Town growth substitute type

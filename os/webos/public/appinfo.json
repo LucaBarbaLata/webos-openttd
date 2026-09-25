@@ -1,10 +1,10 @@
 {
   "id": "com.leondrolio.x.openttd",
-  "version": "15.0.1",
+  "version": "15.3.2",
   "vendor": "leondrolio.com",
   "type": "native",
   "main": "openttd",
-  "title": "OpenTTD 15.0-beta3",
+  "title": "OpenTTD 15.3",
   "icon": "icon.png",
   "splashBackground": "splash.png",
   "appDescription": "Technical Demo for OpenTTD"

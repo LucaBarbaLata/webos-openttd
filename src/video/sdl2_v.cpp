@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file sdl2_v.cpp Implementation of the SDL2 video driver. */
@@ -13,7 +13,6 @@
 #include "../blitter/factory.hpp"
 #include "../thread.h"
 #include "../progress.h"
-#include "../core/random_func.hpp"
 #include "../core/math_func.hpp"
 #include "../core/geometry_func.hpp"
 #include "../core/utf8.hpp"
@@ -215,6 +214,12 @@ bool VideoDriver_SDL_Base::ClaimMousePointer()
  */
 void VideoDriver_SDL_Base::EditBoxGainedFocus()
 {
+#ifdef WEBOS
+	/* LG WebOS: SDL_StartTextInput tries to open the system virtual keyboard through
+	 * Wayland and can crash. Keep text input off; keys are handled via SDL_KEYDOWN and
+	 * OpenTTD's own on-screen keyboard. */
+	return;
+#endif
 	if (!this->edit_box_focused) {
 		SDL_StartTextInput();
 		this->edit_box_focused = true;

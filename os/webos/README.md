@@ -1,6 +1,11 @@
 # webos openttd
 
 ## Project Setup
+
+Download the webOS toolchain (`arm-webos-linux-gnueabi_sdk-buildroot-x86_64.tar.gz`) from the
+[buildroot-nc4 releases](https://github.com/openlgtv/buildroot-nc4/releases), extract it and run `./relocate-sdk.sh` inside it.
+The GitHub Actions workflow uses the `2026.08-webos` release.
+
 ```sh
 # if you dump it into your opt folder...
 export TOOLCHAIN_DIR=/opt/arm-webos-linux-gnueabi_sdk-buildroot
@@ -14,7 +19,7 @@ export TOOLCHAIN_DIR=/Volumes/Programming/arm-webos-linux-gnueabi_sdk-buildroot
 > Do these in a different folder, outside of the OpenTTD folder.
 
 ```sh
-git clone https://github.com/FluidSynth/fluidsynth
+git clone --branch v2.6.1 --recurse-submodules https://github.com/FluidSynth/fluidsynth
 cd fluidsynth
 mkdir build
 cd build

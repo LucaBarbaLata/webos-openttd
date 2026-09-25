@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file townname.cpp %Town name generators. */
@@ -667,7 +667,7 @@ static void MakeCzechTownName(StringBuilder &builder, uint32_t seed)
 		for (ending = ending_start; ending <= ending_stop; ending++) {
 			const CzechNameSubst *e = &_name_czech_subst_ending[ending];
 
-			if ((e->choose & choose) == choose && e->allow.Any(allow)) {
+			if (e->choose.All(choose) && e->allow.Any(allow)) {
 				map[i++] = ending;
 			}
 		}
@@ -681,7 +681,7 @@ static void MakeCzechTownName(StringBuilder &builder, uint32_t seed)
 		assert(gender != CZG_FREE && gender != CZG_NFREE);
 	}
 
-	if (do_prefix && (_name_czech_adj[prefix].choose & choose) != choose) {
+	if (do_prefix && !_name_czech_adj[prefix].choose.All(choose)) {
 		/* Throw away non-matching prefix. */
 		do_prefix = false;
 	}
@@ -701,25 +701,9 @@ static void MakeCzechTownName(StringBuilder &builder, uint32_t seed)
 			std::string_view poststr = _name_czech_subst_postfix[postfix];
 			std::string_view endstr = _name_czech_subst_ending[ending].name;
 
-			size_t postlen = poststr.size();
-			size_t endlen = endstr.size();
-			assert(postlen > 0 && endlen > 0);
-
 			/* Kill the "avava" and "Jananna"-like cases */
-			if (postlen < 2 || postlen > endlen ||
-					((poststr[1] != 'v' || poststr[1] != endstr[1]) &&
-					poststr[2] != endstr[1])) {
+			if (poststr[1] != 'v' || poststr[1] != endstr[1]) {
 				builder += poststr;
-
-				/* k-i -> c-i, h-i -> z-i */
-				if (endstr[0] == 'i') {
-					std::string &str = builder.GetString();
-					switch (str.back()) {
-						case 'k': str.back() = 'c'; break;
-						case 'h': str.back() = 'z'; break;
-						default: break;
-					}
-				}
 			}
 		}
 		builder += _name_czech_subst_ending[ending].name;
