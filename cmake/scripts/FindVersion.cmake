@@ -123,6 +123,14 @@ else()
     set(REV_ISSTABLETAG 0)
 endif()
 
+# LG WebOS builds are the upstream stable release plus port patches, which do not
+# affect gameplay; identify them as that stable release rather than as a nightly.
+if(WEBOS)
+    set(REV_VERSION "${REV_MAJOR}.${REV_MINOR}")
+    set(REV_ISTAG 1)
+    set(REV_ISSTABLETAG 1)
+endif()
+
 # Extract REV_YEAR and REV_DATE from REV_ISODATE
 string(SUBSTRING "${REV_ISODATE}" 0 4 REV_YEAR)
 string(SUBSTRING "${REV_ISODATE}" 4 4 REV_DATE)
