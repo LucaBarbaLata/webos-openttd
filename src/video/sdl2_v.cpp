@@ -214,6 +214,12 @@ bool VideoDriver_SDL_Base::ClaimMousePointer()
  */
 void VideoDriver_SDL_Base::EditBoxGainedFocus()
 {
+#ifdef WEBOS
+	/* LG WebOS: SDL_StartTextInput tries to open the system virtual keyboard through
+	 * Wayland and can crash. Keep text input off; keys are handled via SDL_KEYDOWN and
+	 * OpenTTD's own on-screen keyboard. */
+	return;
+#endif
 	if (!this->edit_box_focused) {
 		SDL_StartTextInput();
 		this->edit_box_focused = true;
