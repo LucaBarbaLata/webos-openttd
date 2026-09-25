@@ -53,7 +53,7 @@ jobs:
 
     - name: Install webOS toolchain
       run: |
-        curl -L https://github.com/openlgtv/buildroot-nc4/releases/latest/download/arm-webos-linux-gnueabi_sdk-buildroot.tar.gz -o webos.tar.gz
+        curl -fL https://github.com/openlgtv/buildroot-nc4/releases/download/2026.08-webos/arm-webos-linux-gnueabi_sdk-buildroot-x86_64.tar.gz -o webos.tar.gz
         tar -xzf webos.tar.gz -C os/webos
         rm -f webos.tar.gz
         cd os/webos/arm-webos-linux-gnueabi_sdk-buildroot
@@ -73,7 +73,7 @@ jobs:
 
     - name: Install FluidSynth
       run: |
-        git clone https://github.com/FluidSynth/fluidsynth
+        git clone --depth 1 --branch v2.6.1 --recurse-submodules --shallow-submodules https://github.com/FluidSynth/fluidsynth
         cd fluidsynth
         mkdir build
         cd build
@@ -108,7 +108,7 @@ jobs:
       run: |
         cd os/webos
         chmod +x package.sh
-        TOOLCHAIN_DIRECTORY=$GITHUB_WORKSPACE/os/webos/arm-webos-linux-gnueabi_sdk-buildroot ./package.sh
+        TOOLCHAIN_DIR=$GITHUB_WORKSPACE/os/webos/arm-webos-linux-gnueabi_sdk-buildroot ./package.sh
         node scripts/manifest.js
         ls
 
