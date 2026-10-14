@@ -25,6 +25,12 @@
 #	include <emscripten.h>
 #	include <emscripten/html5.h>
 #endif
+#ifdef WEBOS
+#	include "../settings_func.h"
+#	include "../hotkeys.h"
+#	include "../highscore.h"
+#	include "../window_gui.h"
+#endif
 
 #include "../safeguards.h"
 
@@ -387,6 +393,22 @@ static uint ConvertSdlKeycodeIntoMy(SDL_Keycode kc)
 	return key;
 }
 
+#ifdef WEBOS
+/**
+ * LG WebOS: the TV can kill the app shortly after closing it or sending it to the background,
+ * before OpenTTD shuts down normally and saves its configuration. Save it right away instead.
+ */
+static void WebOSSaveConfig()
+{
+	if (!_save_config) return;
+
+	SaveToConfig();
+	SaveHotkeysToConfig();
+	WindowDesc::SaveToConfig();
+	SaveToHighScore();
+}
+#endif
+
 bool VideoDriver_SDL_Base::PollEvent()
 {
 	SDL_Event ev;
@@ -469,6 +491,9 @@ bool VideoDriver_SDL_Base::PollEvent()
 			break;
 
 		case SDL_QUIT:
+#ifdef WEBOS
+			WebOSSaveConfig();
+#endif
 			HandleExitGameRequest();
 			break;
 
@@ -531,6 +556,11 @@ bool VideoDriver_SDL_Base::PollEvent()
 				/* mouse left the window, undraw cursor */
 				UndrawMouseCursor();
 				_cursor.in_window = false;
+#ifdef WEBOS
+			} else if (ev.window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
+				/* LG WebOS: the app is being closed or sent to the background. */
+				WebOSSaveConfig();
+#endif
 			}
 			break;
 		}
