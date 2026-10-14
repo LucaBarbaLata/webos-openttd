@@ -7,6 +7,8 @@ on:
   push:
     branches:
     - webos
+    tags:
+    - 'webos-*'
   workflow_dispatch:
 
 env:
@@ -14,7 +16,7 @@ env:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/webos' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   webos:
@@ -129,3 +131,38 @@ jobs:
         path: |
           os/webos/*.ipk
           os/webos/manifest.json
+
+  release:
+    name: Release
+    needs: webos
+    if: startsWith(github.ref, 'refs/tags/webos-')
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download .ipk
+      uses: actions/download-artifact@v4
+      with:
+        name: openttd
+
+    - name: Publish release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # The tag (webos-<version>) must match the version in os/webos/public/appinfo.json.
+        VERSION="${GITHUB_REF_NAME#webos-}"
+        IPK=$(ls *_"${VERSION}"_arm.ipk 2>/dev/null || true)
+        if [ -z "$IPK" ]; then
+          echo "::error::Tag $GITHUB_REF_NAME doesn't match the package version ($(ls *.ipk)). Bump appinfo.json or fix the tag."
+          exit 1
+        fi
+
+        # manifest.json refers to the .ipk by file name, so both are attached to the same release.
+        if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+          gh release upload "$GITHUB_REF_NAME" "$IPK" manifest.json --repo "$GITHUB_REPOSITORY" --clobber
+        else
+          gh release create "$GITHUB_REF_NAME" "$IPK" manifest.json --repo "$GITHUB_REPOSITORY" \
+            --title "OpenTTD $VERSION for LG webOS" --generate-notes
+        fi

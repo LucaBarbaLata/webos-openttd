@@ -71,6 +71,20 @@ On startup OpenTTD copies it to `.config/openttd/openttd.cfg` in the app folder,
 Don't ship an `openttd.cfg` in the package itself: installing an update overwrites every file in the package, so the player's settings would be reset.
 Settings and saves (`.local/share/openttd/`) are not part of the package, so installing an update leaves them alone; uninstalling the app deletes them.
 
+## Releasing
+
+1. Bump `version` in `public/appinfo.json` and get that change into the `webos` branch.
+2. Tag that commit as `webos-<version>` and push the tag:
+
+```sh
+git tag webos-15.3.3
+git push origin webos-15.3.3
+```
+
+The `CI (LG WebOS)` workflow then builds the package and publishes a GitHub release with the `.ipk` and `manifest.json` attached.
+The release step fails if the tag doesn't match the version in `appinfo.json`.
+`https://github.com/LucaBarbaLata/webos-openttd/releases/latest/download/manifest.json` always points at the newest release.
+
 ## Debugging OpenTTD
 
 ```sh
