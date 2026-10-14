@@ -64,6 +64,13 @@ Put the file in the `public/` folder.
 # ares-package .
 ```
 
+### Default settings
+
+`public/openttd.default.cfg` holds the settings a fresh install starts with (fullscreen, GUI scale, base sets, volumes).
+On startup OpenTTD copies it to `.config/openttd/openttd.cfg` in the app folder, but only when that file doesn't exist yet.
+Don't ship an `openttd.cfg` in the package itself: installing an update overwrites every file in the package, so the player's settings would be reset.
+Settings and saves (`.local/share/openttd/`) are not part of the package, so installing an update leaves them alone; uninstalling the app deletes them.
+
 ## Debugging OpenTTD
 
 ```sh

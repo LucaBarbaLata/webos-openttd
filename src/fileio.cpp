@@ -967,6 +967,15 @@ void DeterminePaths(std::string_view exe, bool only_local_path)
 
 	/* Make the necessary folders */
 	FioCreateDirectory(config_dir);
+#ifdef WEBOS
+	/* LG WebOS: the package ships its default settings as openttd.default.cfg next to the binary,
+	 * as installing an update rewrites every file in the package. Only use them when there is no config yet. */
+	if (!FileExists(_config_file) && !_searchpaths[SP_BINARY_DIR].empty()) {
+		std::error_code error_code;
+		std::filesystem::copy_file(OTTD2FS(_searchpaths[SP_BINARY_DIR] + "openttd.default.cfg"), OTTD2FS(_config_file), error_code);
+		if (error_code) Debug(misc, 0, "Copying default config to {} failed: {}", _config_file, error_code.message());
+	}
+#endif
 #if defined(WITH_PERSONAL_DIR)
 	FioCreateDirectory(_personal_dir);
 #endif
