@@ -123,6 +123,14 @@ else()
     set(REV_ISSTABLETAG 0)
 endif()
 
+# LG WebOS builds are the upstream stable release plus port patches, which do not
+# affect gameplay; identify them as that stable release rather than as a nightly.
+if(WEBOS)
+    set(REV_VERSION "${REV_MAJOR}.${REV_MINOR}")
+    set(REV_ISTAG 1)
+    set(REV_ISSTABLETAG 1)
+endif()
+
 # Extract REV_YEAR and REV_DATE from REV_ISODATE
 string(SUBSTRING "${REV_ISODATE}" 0 4 REV_YEAR)
 string(SUBSTRING "${REV_ISODATE}" 4 4 REV_DATE)
@@ -135,6 +143,9 @@ if(GENERATE_OTTDREV)
     message(STATUS "Generating .ottdrev")
     file(WRITE ${CMAKE_SOURCE_DIR}/.ottdrev "${REV_VERSION}\t${REV_ISODATE}\t${REV_MODIFIED}\t${REV_HASH}\t${REV_ISTAG}\t${REV_ISSTABLETAG}\n")
 else()
+    if(REV_ISSTABLETAG AND NOT (REV_VERSION STREQUAL "${REV_MAJOR}.${REV_MINOR}"))
+        message(FATAL_ERROR "Tag (${REV_VERSION}) doesn't match internal version (${REV_MAJOR}.${REV_MINOR})")
+    endif()
     message(STATUS "Generating rev.cpp")
     configure_file("${CMAKE_SOURCE_DIR}/src/rev.cpp.in"
             "${FIND_VERSION_BINARY_DIR}/rev.cpp")

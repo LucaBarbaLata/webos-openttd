@@ -1,10 +1,22 @@
 name: CI (LG WebOS)
 
 on:
+  pull_request:
+    branches:
+    - webos
+  push:
+    branches:
+    - webos
+    tags:
+    - 'webos-*'
   workflow_dispatch:
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   webos:
@@ -53,7 +65,7 @@ jobs:
 
     - name: Install webOS toolchain
       run: |
-        curl -L https://github.com/openlgtv/buildroot-nc4/releases/latest/download/arm-webos-linux-gnueabi_sdk-buildroot.tar.gz -o webos.tar.gz
+        curl -fL https://github.com/openlgtv/buildroot-nc4/releases/download/2026.08-webos/arm-webos-linux-gnueabi_sdk-buildroot-x86_64.tar.gz -o webos.tar.gz
         tar -xzf webos.tar.gz -C os/webos
         rm -f webos.tar.gz
         cd os/webos/arm-webos-linux-gnueabi_sdk-buildroot
@@ -73,7 +85,7 @@ jobs:
 
     - name: Install FluidSynth
       run: |
-        git clone https://github.com/FluidSynth/fluidsynth
+        git clone --depth 1 --branch v2.6.1 --recurse-submodules --shallow-submodules https://github.com/FluidSynth/fluidsynth
         cd fluidsynth
         mkdir build
         cd build
@@ -108,7 +120,7 @@ jobs:
       run: |
         cd os/webos
         chmod +x package.sh
-        TOOLCHAIN_DIRECTORY=$GITHUB_WORKSPACE/os/webos/arm-webos-linux-gnueabi_sdk-buildroot ./package.sh
+        TOOLCHAIN_DIR=$GITHUB_WORKSPACE/os/webos/arm-webos-linux-gnueabi_sdk-buildroot ./package.sh
         node scripts/manifest.js
         ls
 
@@ -119,3 +131,38 @@ jobs:
         path: |
           os/webos/*.ipk
           os/webos/manifest.json
+
+  release:
+    name: Release
+    needs: webos
+    if: startsWith(github.ref, 'refs/tags/webos-')
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download .ipk
+      uses: actions/download-artifact@v4
+      with:
+        name: openttd
+
+    - name: Publish release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # The tag (webos-<version>) must match the version in os/webos/public/appinfo.json.
+        VERSION="${GITHUB_REF_NAME#webos-}"
+        IPK=$(ls *_"${VERSION}"_arm.ipk 2>/dev/null || true)
+        if [ -z "$IPK" ]; then
+          echo "::error::Tag $GITHUB_REF_NAME doesn't match the package version ($(ls *.ipk)). Bump appinfo.json or fix the tag."
+          exit 1
+        fi
+
+        # manifest.json refers to the .ipk by file name, so both are attached to the same release.
+        if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+          gh release upload "$GITHUB_REF_NAME" "$IPK" manifest.json --repo "$GITHUB_REPOSITORY" --clobber
+        else
+          gh release create "$GITHUB_REF_NAME" "$IPK" manifest.json --repo "$GITHUB_REPOSITORY" \
+            --title "OpenTTD $VERSION for LG webOS" --generate-notes
+        fi

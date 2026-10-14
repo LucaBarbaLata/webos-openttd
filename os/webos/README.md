@@ -1,6 +1,11 @@
 # webos openttd
 
 ## Project Setup
+
+Download the webOS toolchain (`arm-webos-linux-gnueabi_sdk-buildroot-x86_64.tar.gz`) from the
+[buildroot-nc4 releases](https://github.com/openlgtv/buildroot-nc4/releases), extract it and run `./relocate-sdk.sh` inside it.
+The GitHub Actions workflow uses the `2026.08-webos` release.
+
 ```sh
 # if you dump it into your opt folder...
 export TOOLCHAIN_DIR=/opt/arm-webos-linux-gnueabi_sdk-buildroot
@@ -14,7 +19,7 @@ export TOOLCHAIN_DIR=/Volumes/Programming/arm-webos-linux-gnueabi_sdk-buildroot
 > Do these in a different folder, outside of the OpenTTD folder.
 
 ```sh
-git clone https://github.com/FluidSynth/fluidsynth
+git clone --branch v2.6.1 --recurse-submodules https://github.com/FluidSynth/fluidsynth
 cd fluidsynth
 mkdir build
 cd build
@@ -58,6 +63,27 @@ Put the file in the `public/` folder.
 ./package.sh
 # ares-package .
 ```
+
+### Default settings
+
+`public/openttd.default.cfg` holds the settings a fresh install starts with (fullscreen, GUI scale, base sets, volumes).
+On startup OpenTTD copies it to `.config/openttd/openttd.cfg` in the app folder, but only when that file doesn't exist yet.
+Don't ship an `openttd.cfg` in the package itself: installing an update overwrites every file in the package, so the player's settings would be reset.
+Settings and saves (`.local/share/openttd/`) are not part of the package, so installing an update leaves them alone; uninstalling the app deletes them.
+
+## Releasing
+
+1. Bump `version` in `public/appinfo.json` and get that change into the `webos` branch.
+2. Tag that commit as `webos-<version>` and push the tag:
+
+```sh
+git tag webos-15.3.3
+git push origin webos-15.3.3
+```
+
+The `CI (LG WebOS)` workflow then builds the package and publishes a GitHub release with the `.ipk` and `manifest.json` attached.
+The release step fails if the tag doesn't match the version in `appinfo.json`.
+`https://github.com/LucaBarbaLata/webos-openttd/releases/latest/download/manifest.json` always points at the newest release.
 
 ## Debugging OpenTTD
 
